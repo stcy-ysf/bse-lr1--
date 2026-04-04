@@ -29,7 +29,7 @@
 
 git clone https://github.com/stcy-ysf/bse-lr1--.git
 
-cd project
+cd bse-lr1-Плохотнікова
 
 python main.py
 
