@@ -23,61 +23,185 @@
 **FR-07:** Сайт має перевіряти, чи правильно людина ввела email (чи є там значок "@").
 
 ## Крок 3. Use Case Diagram
-```plantuml
-left to right direction
-skinparam roundcorner 15
-skinparam shadowing true
+```mermaid
+flowchart LR
+    %% Стилізація класів (максимально наближено до картинки)
+    classDef actor fill:transparent,stroke:none,color:#E67E22,font-weight:bold;
+    classDef usecase fill:#EBF5FB,stroke:#2980B9,stroke-width:1.5px,color:#0B5345;
+    classDef note fill:#FFF9C4,stroke:#B2BABB,stroke-width:1px,color:black;
 
-' Налаштування сучасних кольорів
-skinparam usecase {
-    BackgroundColor #E3F2FD
-    BorderColor #1E88E5
-    FontColor #0D47A1
-    ArrowColor #1E88E5
-    BorderThickness 2
-}
+    %% Актори (використовуємо іконки-емодзі та прозорий фон)
+    User["👤<br>Відвідувач сайту<br>(Гість)"]:::actor
+    MailAPI["✉️<br>Email API<br>«Зовнішня система»"]:::actor
 
-skinparam actor {
-    BackgroundColor #FFECB3
-    BorderColor #FFB300
-    FontColor #FF8F00
-}
+    subgraph System ["💻 Межа системи: Startup Planner Web App"]
+        direction TB
+        %% Ліва колонка прецедентів
+        UC_Plan(["⚡ Згенерувати план дій"]):::usecase
+        UC_Risk(["⚠️ Отримати аналіз ризиків"]):::usecase
+        UC_Sub(["🔔 Підписатися на оновлення"]):::usecase
+        
+        %% Права колонка прецедентів
+        UC_Audience(["🎯 Вибрати одну аудиторію"]):::usecase
+        UC_Problem(["📝 Ввести текст проблеми"]):::usecase
+        UC_Val(["✅ Перевірити наявність '@'"]):::usecase
+        
+        %% Нотатка
+        Note["Спрацьовує під час<br>написання тексту"]:::note
+    end
 
-skinparam rectangle {
-    BackgroundColor #FAFAFA
-    BorderColor #BDBDBD
-    BorderThickness 2
-    FontColor #424242
-}
+    %% Зв'язки акторів (суцільні лінії)
+    User --> UC_Plan
+    User --> UC_Sub
+    UC_Sub --> MailAPI
 
-actor "👤 Відвідувач сайту\n(Гість)" as User
-actor "📧 Email API\n<<Зовнішня система>>" as MailAPI 
+    %% Зв'язки Include / Extend (пунктирні лінії)
+    UC_Plan -. "«include»" .-> UC_Audience
+    UC_Plan -. "«include»" .-> UC_Problem
+    UC_Risk -. "«extend»" .-> UC_Problem
+    UC_Sub -. "«include»" .-> UC_Val
 
-rectangle "🖥️ Межа системи: Startup Planner Web App" {
-    
-    usecase "⚡ Згенерувати план дій" as UC_Plan
-    usecase "🎯 Вибрати одну аудиторію" as UC_Audience
-    usecase "📝 Ввести текст проблеми" as UC_Problem
-    usecase "⚠️ Отримати аналіз ризиків" as UC_Risk
-    
-    usecase "🔔 Підписатися на оновлення" as UC_Sub
-    usecase "✅ Перевірити наявність '@'" as UC_Val
+    %% Зв'язок нотатки (звичайна лінія)
+    UC_Problem --- Note
 
-    note "Спрацьовує під час\nнаписання тексту" as NoteExtend
-}
+    %% Фарбуємо лінії у синій колір, як на картинці
+    linkStyle 0,1,2 stroke:#2980B9,stroke-width:1.5px;
+    linkStyle 3,4,5,6 stroke:#2980B9,stroke-width:1.5px,stroke-dasharray: 5 5;
+    linkStyle 7 stroke:#7F8C8D,stroke-width:1px;
 
-' Зв'язки акторів
-User -down-> UC_Plan
-User -down-> UC_Sub
-UC_Sub -down-> MailAPI
-
-' Зв'язки Include (обов'язкові вхідні дані)
-UC_Plan ..> UC_Audience : <<include>>
-UC_Plan ..> UC_Problem : <<include>>
-UC_Sub ..> UC_Val : <<include>>
-
-' Зв'язки Extend (розширений функціонал)
-UC_Risk ..> UC_Problem : <<extend>>
-UC_Problem .. NoteExtend
-
+    %% Стиль сірої рамки (межі системи)
+    style System fill:#FAFAFA,stroke:#95A5A6,stroke-width:2px,color:#2C3E50,font-weight:bold;
 ```
+
+## Крок 4. Class Diagram
+```mermaid
+classDiagram
+    %% Базовий абстрактний клас
+    class GeneratedDocument {
+        <<abstract>>
+        -UUID documentId
+        -Date createdAt
+        +displayContent() void
+        +exportAsPDF() boolean
+    }
+
+    %% Класи, що наслідують GeneratedDocument
+    class ActionPlan {
+        -int durationDays
+        -List~String~ tasks
+        +getDailyTask(day: int) String
+        +generateSteps(blocker: String) void
+    }
+
+    class RiskAnalysis {
+        -String severityLevel
+        -List~String~ criticalRisks
+        +calculateSeverity() String
+        +highlightThreats() void
+    }
+
+    %% Довідник аудиторій
+    class TargetAudience {
+        -int audienceId
+        -String categoryName
+        -String description
+        +getDetails() String
+    }
+
+    %% Головний контекст
+    class StartupProject {
+        -UUID projectId
+        -String problemBlocker
+        +setBlocker(text: String) void
+        +assignAudience(audience: TargetAudience) void
+        +createPlan() ActionPlan
+        +analyzeRisks() RiskAnalysis
+    }
+
+    %% Клас для роботи з email
+    class Subscription {
+        -String emailAddress
+        -boolean isVerified
+        +validateEmailFormat() boolean
+        +sendToMailAPI() void
+    }
+
+    %% Клас користувача (Анонімна сесія)
+    class GuestSession {
+        -String sessionToken
+        -Date startedAt
+        +initiateProject() StartupProject
+        +subscribeForUpdates(email: String) Subscription
+    }
+
+    %% ЗВ'ЯЗКИ МІЖ КЛАСАМИ (Relations)
+
+    %% 1. Наслідування (Inheritance)
+    GeneratedDocument <|-- ActionPlan
+    GeneratedDocument <|-- RiskAnalysis
+
+    %% 2. Композиція (Composition): Проєкт жорстко володіє документами
+    StartupProject "1" *-- "0..1" ActionPlan : generates
+    StartupProject "1" *-- "0..1" RiskAnalysis : produces
+
+    %% 3. Агрегація (Aggregation): Проєкт посилається на існуючу аудиторію
+    StartupProject "0..*" o-- "1" TargetAudience : selects
+
+    %% 4. Асоціація (Association)
+    GuestSession "1" --> "0..1" StartupProject : manages
+    GuestSession "1" --> "0..1" Subscription : registers
+```
+
+## Крок 5. Sequence Diagram
+```mermaid
+sequenceDiagram
+    autonumber
+    
+    actor Guest as Гість
+    participant UI as Веб-інтерфейс
+    participant Session as :GuestSession
+    participant Project as :StartupProject
+    participant Risk as :RiskAnalysis
+    participant Plan as :ActionPlan
+
+    Guest->>+UI: Натиснути "Згенерувати" (дані)
+    
+    alt Дані некоректні
+        UI-->>Guest: Повідомлення про помилку
+    else Дані валідні
+        UI->>+Session: initiateGeneration(дані)
+        
+        Session->>+Project: createProject()
+        Project->>Project: assignAudience()
+        Project->>Project: setBlocker()
+        
+        Project->>+Risk: analyzeRisks()
+        Risk->>Risk: calculateSeverity()
+        Risk-->>-Project: return (Аналіз ризиків)
+        
+        Project->>+Plan: createPlan()
+        
+        loop 7 ітерацій (по днях)
+            Plan->>Plan: getDailyTask()
+        end
+        
+        Plan-->>-Project: return (Готовий план)
+        
+        Project-->>-Session: return (Документи)
+        Session-->>-UI: return (Дані для екрану)
+        
+        UI-->>-Guest: Відображення плану та ризиків
+    end
+```
+## Крок 6. Traceability Matrix
+### Таблиця 2.2 — Матриця трасовності
+
+| Вимога | Use Case | Класи | Sequence |
+| :--- | :--- | :--- | :--- |
+| **FR-01** | — *(Системна вимога)* | `GuestSession` | SD-01 (Ініціалізація сесії) |
+| **FR-02** | UC-02 (Вибрати аудиторію) | `StartupProject`, `TargetAudience` | SD-01 (Генерація плану) |
+| **FR-03** | UC-03 (Ввести проблему) | `StartupProject` | SD-01 (Генерація плану) |
+| **FR-04** | UC-04 (Аналіз ризиків) | `StartupProject`, `RiskAnalysis` | SD-01 (Генерація плану) |
+| **FR-05** | UC-01 (Згенерувати план) | `GuestSession`, `StartupProject`, `ActionPlan` | SD-01 (Генерація плану) |
+| **FR-06** | UC-05 (Підписка на оновлення) | `GuestSession`, `Subscription` | — |
+| **FR-07** | UC-06 (Валідувати email) | `Subscription` | — |
